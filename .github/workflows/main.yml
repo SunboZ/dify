@@ -1,0 +1,48 @@
+name: Full Sync All Branches and Tags from Upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天 UTC 0 点执行（北京时间 8 点）
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout your fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取所有历史和分支
+          persist-credentials: false
+
+      - name: Set git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set up authentication for pushing
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/langgenius/dify.git
+          git fetch --all
+
+      - name: Sync all branches and tags
+        run: |
+          # for branch in $(git branch -r | grep 'upstream/' | grep -vE 'HEAD' | sed 's|upstream/||'); do
+          #   echo "Syncing branch: $branch"
+          #   git checkout "$branch" 
+          #   git merge "upstream/$branch"
+          #   git push origin "$branch"
+          # done
+
+          echo "Syncing tags..."
+          
+          git push origin --tags
+          
+      - name: Cleanup
+        run: |
+          echo "Sync complete"
